@@ -2,44 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="form-container">
-    <h2>Signup</h2>
-    <form id="signupForm">
-      <input type="text" placeholder="Username" id="username" required>
-      <input type="password" placeholder="Password" id="password" required>
-      <button type="submit">Signup</button>
-    </form>
-    <p>Already have an account? <a href="login.html">Login</a></p>
+<body class="signup-page">
+  <div class="container">
+    <h2>Sign Up</h2>
+    <input type="text" id="signupUsername" placeholder="Username">
+    <input type="password" id="signupPassword" placeholder="Password">
+    <button id="signupBtn">Daftar</button>
+    <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
-  <button id="darkModeToggle">🌙</button>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>const socketSignup = io();
+document.getElementById('signupBtn').addEventListener('click', () => {
+  const username = document.getElementById('signupUsername').value;
+  const password = document.getElementById('signupPassword').value;
+  socketSignup.emit('signup', { username, password });
+});
 
-  <script>
-    const form = document.getElementById("signupForm");
-    const toggleBtn = document.getElementById("darkModeToggle");
-
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      fetch("/socket.io/").then(() => {
-        alert("Signup berhasil! Silakan login.");
-        window.location.href = "/login.html";
-      });
-    });
-
-    // Dark mode
-    function applyTheme(theme) {
-      document.body.classList.toggle("dark", theme === "dark");
-      toggleBtn.textContent = theme === "dark" ? "☀️" : "🌙";
-    }
-    toggleBtn.addEventListener("click", () => {
-      const t = document.body.classList.contains("dark") ? "light" : "dark";
-      localStorage.setItem("theme", t);
-      applyTheme(t);
-    });
-    applyTheme(localStorage.getItem("theme") || "light");
-  </script>
+socketSignup.on('signupResult', data => {
+  if (data.success) {
+    alert('Pendaftaran berhasil. Silakan login.');
+    window.location.href = 'login.html';
+  } else {
+    alert(data.message);
+  }
+});
+</script>
 </body>
 </html>
