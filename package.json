@@ -1,0 +1,19 @@
+{
+  "name": "SayHai",
+  "version": "1.0.0",
+  "description": "SayHai tempat ngobrol seru bersama teman",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.0"
+  },
+  "author": "Azz",
+  "license": "MIT"
+}
