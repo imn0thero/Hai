@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="text" placeholder="Username" id="username" required>
+      <input type="password" placeholder="Password" id="password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="signup.html">Signup</a></p>
+  </div>
+  <button id="darkModeToggle">🌙</button>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const toggleBtn = document.getElementById("darkModeToggle");
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      localStorage.setItem("username", username.value);
+      localStorage.setItem("password", password.value);
+      window.location.href = "/";
+    });
+
+    // Dark mode
+    function applyTheme(theme) {
+      document.body.classList.toggle("dark", theme === "dark");
+      toggleBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+    }
+    toggleBtn.addEventListener("click", () => {
+      const t = document.body.classList.contains("dark") ? "light" : "dark";
+      localStorage.setItem("theme", t);
+      applyTheme(t);
+    });
+    applyTheme(localStorage.getItem("theme") || "light");
+  </script>
+</body>
+</html>
