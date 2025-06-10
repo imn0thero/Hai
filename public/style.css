@@ -1,171 +1,173 @@
-/* === public/style.css === */
+/* style.css */
+
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #755efc;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  transition: background-color 0.3s;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #e6f7ff;
+  color: #fff;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.container {
-  width: 380px;
-  height: 700px;
-  background-color: #8668ff;
-  border-radius: 30px;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+body.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+/* INDEX (chat) page styles */
+.chat-wrapper {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
 }
 
 .header {
-  background-color: #755efc;
-  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #00aaff;
+  padding: 10px;
+  color: white;
+}
+
+.header button {
+  background-color: transparent;
+  border: none;
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
 }
 
 .chat-box {
   flex: 1;
-  padding: 15px;
+  padding: 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .message {
-  max-width: 75%;
-  padding: 12px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 15px;
+  max-width: 70%;
   word-wrap: break-word;
-  line-height: 1.4;
+  color: black;
+  background-color: #b3e5fc;
 }
 
-.message.sender {
+.message.user {
   align-self: flex-end;
-  background-color: white;
-  color: #333;
-  border-bottom-right-radius: 0;
+  background-color: #81d4fa;
 }
 
-.message.receiver {
+.message.other {
   align-self: flex-start;
-  background-color: #a88eff;
-  color: white;
-  border-bottom-left-radius: 0;
+  background-color: #d0f0fd;
 }
 
-#messageForm {
+.input-area {
   display: flex;
-  align-items: center;
-  background: white;
-  border-radius: 25px;
-  margin: 10px;
-  padding: 5px 10px;
+  border-top: 1px solid #ccc;
+  background-color: #f0faff;
+  padding: 10px;
 }
 
-#messageInput {
+.input-area input {
   flex: 1;
-  border: none;
   padding: 10px;
-  border-radius: 20px;
+  border: 1px solid #00aaff;
+  border-radius: 5px;
   outline: none;
-  font-size: 14px;
 }
 
-#messageForm button {
-  background: #755efc;
+.input-area button {
+  background-color: #00aaff;
   color: white;
   border: none;
-  padding: 10px 14px;
-  border-radius: 50%;
-  margin-left: 5px;
+  margin-left: 10px;
+  padding: 10px 15px;
+  border-radius: 5px;
   cursor: pointer;
-  font-size: 16px;
+}
+
+/* LOGIN / SIGNUP styles */
+.login-page, .signup-page {
+  background-color: #e6f7ff;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-.form-container {
-  background-color: white;
+.container {
+  background-color: #00aaff;
   padding: 30px;
-  border-radius: 20px;
-  width: 300px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  color: #333;
-}
-
-.form-container h2 {
-  margin-top: 0;
-}
-
-.form-container input,
-.form-container button {
-  width: 100%;
-  margin: 10px 0;
-  padding: 10px;
   border-radius: 10px;
-  border: 1px solid #ccc;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  width: 300px;
+  text-align: center;
 }
 
-/* === DARK MODE === */
-body.dark {
-  background-color: #0e0e0e;
+.container h2 {
+  margin-bottom: 20px;
   color: white;
+}
+
+.container input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  outline: none;
+}
+
+.container button {
+  width: 100%;
+  padding: 10px;
+  background-color: white;
+  color: #00aaff;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.container a {
+  color: white;
+  text-decoration: underline;
 }
 
 body.dark .container {
-  background-color: #1c1c1c;
-  box-shadow: 0 15px 30px rgba(255,255,255,0.05);
-}
-
-body.dark .header {
-  background-color: #2a2a2a;
-}
-
-body.dark .chat-box {
-  background-color: #1c1c1c;
-}
-
-body.dark .message.receiver {
   background-color: #333;
-  color: #eee;
 }
 
-body.dark .message.sender {
-  background-color: #eee;
-  color: #111;
+body.dark .container h2,
+body.dark .container a {
+  color: #fff;
 }
 
-body.dark #messageForm {
-  background-color: #2c2c2c;
-}
-
-body.dark #messageInput {
-  background-color: #444;
-  color: #eee;
-}
-
-body.dark #messageForm button {
-  background-color: #444;
-}
-
-body.dark .form-container {
+body.dark .input-area {
   background-color: #222;
-  color: white;
 }
 
-body.dark .form-container input,
-body.dark .form-container button {
-  background-color: #333;
-  color: white;
-  border: 1px solid #555;
+body.dark .input-area input,
+body.dark .input-area button {
+  background-color: #444;
+  color: #fff;
+  border-color: #555;
+}
+
+body.dark .message {
+  color: #000;
+}
+
+body.dark .message.user {
+  background-color: #6699cc;
+}
+
+body.dark .message.other {
+  background-color: #aaccee;
 }
