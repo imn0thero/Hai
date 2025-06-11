@@ -1,74 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Chat</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <script>
-    const user = localStorage.getItem('user');
-    const target = localStorage.getItem('target');
-    if (!user || !target) location.href = 'login.html';
-  </script>
-
   <div class="container">
-    <h3>Chat dengan <span id="targetUser"></span></h3>
+    <h2>Chat dengan <span id="peer"></span></h2>
     <div id="chatBox" class="chat-box"></div>
-    <form id="chatForm">
-      <input type="text" id="message" placeholder="Tulis pesan...">
-      <button type="submit">Kirim</button>
-    </form>
-    <button onclick="clearChat()">Hapus Semua Pesan</button>
+    <input type="text" id="message" placeholder="Tulis pesan">
+    <button onclick="sendMessage()">Kirim</button>
+    <button onclick="clearChat()">Hapus Semua</button>
+    <button onclick="back()">Kembali</button>
   </div>
+<script>
+if (!localStorage.getItem('user') || !localStorage.getItem('peer')) location.href = 'index.html';
 
-  <script>
-    const chatBox = document.getElementById('chatBox');
-    const messageInput = document.getElementById('message');
-    const chatForm = document.getElementById('chatForm');
-    const pair = [user, target].sort().join('_');
+const socket = io();
+const me = localStorage.getItem('user');
+const peer = localStorage.getItem('peer');
+document.getElementById('peer').innerText = peer;
+const pairKey = [me, peer].sort().join('_');
 
-    document.getElementById('targetUser').innerText = target;
+socket.emit('register', me);
 
-    async function loadMessages() {
-      const res = await fetch(`/messages/${pair}`);
-      const messages = await res.json();
-      chatBox.innerHTML = '';
+socket.on('message', showMessage);
+
+function loadMessages() {
+  fetch('/messages/' + pairKey)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('chatBox').innerHTML = '';
       const now = Date.now();
-
-      messages.forEach(msg => {
-        if (now - msg.timestamp <= 86400000) {
-          const div = document.createElement('div');
-          div.className = msg.from === user ? 'bubble right' : 'bubble left';
-          div.textContent = msg.text;
-          chatBox.appendChild(div);
-        }
-      });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = messageInput.value;
-      if (!text) return;
-
-      await fetch(`/messages/${pair}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ from: user, to: target, text })
-      });
-
-      messageInput.value = '';
-      loadMessages();
+      data.filter(m => now - m.timestamp < 86400000)
+          .forEach(showMessage);
     });
+}
 
-    async function clearChat() {
-      await fetch(`/messages/${pair}/clear`, { method: 'POST' });
-      loadMessages();
-    }
+function showMessage(msg) {
+  if ([msg.from, msg.to].includes(me) && [msg.from, msg.to].includes(peer)) {
+    const div = document.createElement('div');
+    div.className = 'bubble ' + (msg.from === me ? 'right' : 'left');
+    div.textContent = msg.text;
+    document.getElementById('chatBox').appendChild(div);
+    document.getElementById('chatBox').scrollTop = 999999;
+  }
+}
 
-    loadMessages();
-    setInterval(loadMessages, 5000);
-  </script>
+function sendMessage() {
+  const text = document.getElementById('message').value;
+  if (!text.trim()) return;
+  socket.emit('private-message', { from: me, to: peer, text });
+  document.getElementById('message').value = '';
+}
+
+function clearChat() {
+  fetch('/messages/' + pairKey + '/clear', { method: 'POST' })
+    .then(() => loadMessages());
+}
+
+function back() {
+  localStorage.removeItem('peer');
+  window.location.href = 'index.html';
+}
+
+loadMessages();
+</script>
 </body>
 </html>
