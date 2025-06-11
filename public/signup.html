@@ -3,11 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Signup</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #87cefa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+    }
+    .box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+    }
+    input, button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+    }
+    button {
+      background: white;
+      color: #333;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="signup-page">
-  <div class="container">
+<body>
+  <div class="box">
     <h2>Sign Up</h2>
     <input type="text" id="signupUsername" placeholder="Username">
     <input type="password" id="signupPassword" placeholder="Password">
@@ -15,21 +45,21 @@
     <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script>const socketSignup = io();
-document.getElementById('signupBtn').addEventListener('click', () => {
-  const username = document.getElementById('signupUsername').value;
-  const password = document.getElementById('signupPassword').value;
-  socketSignup.emit('signup', { username, password });
-});
-
-socketSignup.on('signupResult', data => {
-  if (data.success) {
-    alert('Pendaftaran berhasil. Silakan login.');
-    window.location.href = 'login.html';
-  } else {
-    alert(data.message);
-  }
-});
-</script>
+  <script>
+    const socket = io();
+    document.getElementById('signupBtn').addEventListener('click', () => {
+      const username = document.getElementById('signupUsername').value;
+      const password = document.getElementById('signupPassword').value;
+      socket.emit('signup', { username, password });
+    });
+    socket.on('signupResult', data => {
+      if (data.success) {
+        alert('Pendaftaran berhasil. Silakan login.');
+        window.location.href = 'login.html';
+      } else {
+        alert(data.message);
+      }
+    });
+  </script>
 </body>
 </html>
