@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login</title>
   <style>
     body {
-      margin: 0;
-      background: #87CEFA;
-      font-family: sans-serif;
+      background: skyblue;
+      font-family: Arial, sans-serif;
       color: white;
+      margin: 0;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -17,67 +16,47 @@
     }
     .box {
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      width: 300px;
-      text-align: center;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #000;
     }
-    input {
-      width: 90%;
+    input, button {
+      width: 100%;
       padding: 10px;
-      margin: 10px 0;
+      margin-top: 10px;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
     }
     button {
-      padding: 10px 20px;
-      border: none;
       background: white;
-      color: #87CEFA;
+      color: skyblue;
       font-weight: bold;
-      border-radius: 6px;
       cursor: pointer;
-    }
-    a {
-      color: white;
-      text-decoration: underline;
-      display: block;
-      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="box">
     <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username" /><br />
-    <input type="password" id="password" placeholder="Password" /><br />
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
     <button onclick="login()">Login</button>
-    <a href="/signup.html">Belum punya akun?</a>
+    <p id="error" style="color: red;"></p>
   </div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-
     function login() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-
-      if (!username || !password) {
-        alert("Isi username dan password!");
-        return;
-      }
-
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
       socket.emit('login', { username, password });
     }
-
     socket.on('loginResult', res => {
       if (res.success) {
         localStorage.setItem('user', res.user);
-        window.location.href = '/';
+        window.location.href = 'index.html';
       } else {
-        alert(res.message);
+        document.getElementById('error').innerText = res.message;
       }
     });
   </script>
