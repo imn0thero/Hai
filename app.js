@@ -86,10 +86,10 @@ io.on('connection', socket => {
       currentUser = data.username;
       onlineUsers[currentUser] = true;
 
-      // Kirim login berhasil dan semua pesan yang disimpan
+      // Filter only messages between this user and their selected chat partner if needed (currently all)
       socket.emit('loginResult', { success: true, user: currentUser, messages });
 
-      // Perbarui daftar pengguna online
+      // Update online user list
       io.emit('userList', Object.keys(onlineUsers));
     } else {
       socket.emit('loginResult', { success: false, message: 'Username atau password salah' });
@@ -108,7 +108,7 @@ io.on('connection', socket => {
     };
 
     messages.push(messageData);
-    saveMessages(messages); // Simpan setiap pesan baru ke file
+    saveMessages(messages);
 
     io.emit('message', messageData);
   });
