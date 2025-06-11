@@ -1,49 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Index</title>
+  <title>Daftar Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <script>
-    const user = localStorage.getItem('user');
-    if (!user) location.href = 'login.html';
-  </script>
-
   <div class="container">
-    <h2>Halo, <span id="currentUser"></span></h2>
-    <input type="text" id="search" placeholder="Cari pengguna...">
+    <h2>Selamat datang, <span id="me"></span></h2>
+    <input type="text" id="search" placeholder="Cari username...">
     <ul id="userList"></ul>
     <button onclick="logout()">Logout</button>
   </div>
+<script>
+if (!localStorage.getItem('user')) location.href = 'login.html';
 
-  <script>
-    document.getElementById('currentUser').innerText = localStorage.getItem('user');
+const me = localStorage.getItem('user');
+document.getElementById('me').innerText = me;
 
-    async function loadUsers() {
-      const res = await fetch('/users');
-      const users = await res.json();
-      const userList = document.getElementById('userList');
-      userList.innerHTML = '';
-      users.filter(u => u.username !== user).forEach(u => {
-        const li = document.createElement('li');
-        li.textContent = `${u.username} (${u.online ? 'Online' : 'Offline'})`;
-        li.onclick = () => {
-          localStorage.setItem('target', u.username);
-          location.href = 'chat.html';
-        };
-        userList.appendChild(li);
-      });
-    }
+function fetchUsers() {
+  fetch('/users')
+    .then(res => res.json())
+    .then(users => {
+      const list = document.getElementById('userList');
+      list.innerHTML = '';
+      const term = document.getElementById('search').value.toLowerCase();
+      users.filter(u => u.username !== me && u.username.includes(term))
+        .forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = `${u.username} (${u.online ? 'Online' : 'Offline'})`;
+          li.onclick = () => {
+            localStorage.setItem('peer', u.username);
+            window.location.href = 'chat.html';
+          };
+          list.appendChild(li);
+        });
+    });
+}
 
-    document.getElementById('search').addEventListener('input', loadUsers);
-    loadUsers();
+document.getElementById('search').addEventListener('input', fetchUsers);
+fetchUsers();
+setInterval(fetchUsers, 5000);
 
-    function logout() {
-      localStorage.removeItem('user');
-      location.href = 'login.html';
-    }
-  </script>
+function logout() {
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+}
+</script>
 </body>
 </html>
