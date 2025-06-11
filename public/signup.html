@@ -34,6 +34,140 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/signup.js"></script>
+    <script>// ====== public/js/signup.js ======
+const socket = io();
+const signupForm = document.getElementById('signupForm');
+const messageDiv = document.getElementById('message');
+
+// Check if user is already logged in
+window.addEventListener('load', () => {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    
+    if (token && username) {
+        window.location.href = '/';
+    }
+});
+
+// Handle signup form submission
+signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validation
+    if (!username || !password || !confirmPassword) {
+        showMessage('Semua field harus diisi!', 'error');
+        return;
+    }
+    
+    if (username.length < 3) {
+        showMessage('Username minimal 3 karakter!', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showMessage('Password minimal 6 karakter!', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showMessage('Password dan konfirmasi password tidak cocok!', 'error');
+        return;
+    }
+    
+    // Check username format (alphanumeric only)
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+        showMessage('Username hanya boleh mengandung huruf, angka, dan underscore!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage('Pendaftaran berhasil! Silakan login.', 'success');
+            
+            // Reset form
+            signupForm.reset();
+            
+            // Redirect to login page after short delay
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        } else {
+            showMessage(data.message || 'Pendaftaran gagal!', 'error');
+        }
+    } catch (error) {
+        console.error('Signup error:', error);
+        showMessage('Terjadi kesalahan saat mendaftar!', 'error');
+    }
+});
+
+// Show message function
+function showMessage(message, type) {
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    // Hide message after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
+}
+
+// Real-time username availability check
+let checkTimeout;
+document.getElementById('username').addEventListener('input', (e) => {
+    const username = e.target.value.trim();
+    
+    // Clear previous timeout
+    if (checkTimeout) {
+        clearTimeout(checkTimeout);
+    }
+    
+    // Check after user stops typing for 500ms
+    if (username.length >= 3) {
+        checkTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/check-username/${encodeURIComponent(username)}`);
+                const data = await response.json();
+                
+                if (!data.available) {
+                    showMessage('Username sudah digunakan!', 'error');
+                }
+            } catch (error) {
+                console.error('Username check error:', error);
+            }
+        }, 500);
+    }
+});
+
+// Socket events
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
+socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+});
+
+// Handle Enter key press
+document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        signupForm.dispatchEvent(new Event('submit'));
+    }
+});</script>
 </body>
 </html>
