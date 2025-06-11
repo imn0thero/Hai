@@ -1,19 +1,20 @@
 {
-  "name": "SayHai",
+  "name": "simple-chat-app",
   "version": "1.0.0",
-  "description": "SayHai tempat ngobrol seru bersama teman",
+  "description": "A simple real-time chat app using Node.js, Express, Socket.IO, and JSON file storage.",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2",
-    "uuid": "^9.0.0"
-  },
+  "keywords": ["chat", "nodejs", "express", "socket.io", "json"],
   "author": "Azz",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.4",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
 }
