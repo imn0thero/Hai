@@ -145,17 +145,24 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const currentUser = localStorage.getItem('chat_user');
-    const chatWith = localStorage.getItem('chat_with') || 'user2'; // Ganti sesuai logika
+
+    const currentUser = localStorage.getItem('username');
+    const password = localStorage.getItem('password');
+    const chatWith = localStorage.getItem('chat_with') || 'user2'; // Default lawan bicara
+
     document.getElementById('chatUsername').textContent = chatWith;
 
-    if (!currentUser) window.location.href = "/login.html";
-
-    socket.emit('login', { username: currentUser, password: '' });
+    if (!currentUser || !password) {
+      window.location.href = "/login.html";
+    } else {
+      socket.emit('login', { username: currentUser, password });
+    }
 
     socket.on('loginResult', result => {
       if (!result.success) {
         alert(result.message);
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
         window.location.href = "/login.html";
       } else {
         result.messages.forEach(addMessage);
@@ -182,7 +189,10 @@
       const input = document.getElementById('messageInput');
       const text = input.value.trim();
       if (text) {
-        socket.emit('message', { text });
+        socket.emit('message', {
+          text,
+          to: chatWith // Kirim ke lawan bicara tertentu
+        });
         input.value = '';
       }
     });
@@ -197,7 +207,8 @@
 
     function logout() {
       socket.emit('logout');
-      localStorage.removeItem('chat_user');
+      localStorage.removeItem('username');
+      localStorage.removeItem('password');
       window.location.href = "/login.html";
     }
 
