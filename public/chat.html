@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Chat App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <button id="backBtn" class="btn btn-back">← Kembali</button>
+            <div class="chat-user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <span id="chatUsername"></span>
+                    <span id="onlineStatus" class="status-offline">Offline</span>
+                    <span id="typingIndicator" class="typing-indicator">sedang mengetik...</span>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <button id="deleteAllBtn" class="btn btn-danger">🗑️ Hapus Semua</button>
+            </div>
+        </header>
+
+        <main class="chat-main">
+            <div id="messageContainer" class="message-container">
+                <div class="no-messages">Belum ada pesan. Mulai percakapan!</div>
+            </div>
+        </main>
+
+        <footer class="chat-footer">
+            <div class="message-input-container">
+                <input type="text" id="messageInput" placeholder="Ketik pesan..." autocomplete="off">
+                <button id="sendBtn" class="btn btn-primary">Kirim</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+const socket = io();
+let currentUser = '';
+let chatUser = '';
+let messages = [];
+let isTyping = false;
+let typingTimeout;
+
+// DOM elements
+const backBtn = document.getElementById('backBtn');
+const chatUsername = document.getElementById('chatUsername');
+const onlineStatus = document.getElementById('onlineStatus');
+const typingIndicator = document.getElementById('typingIndicator');
+const deleteAllBtn = document.getElementById('deleteAllBtn');
+const messageContainer = document.getElementById('messageContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+
+// Initialize page
+window.addEventListener('load', async () => {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    
+    if (!token || !username) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    currentUser = username;
+    
+    // Get chat user from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    chatUser = urlParams.get('user');
+    
+    if (!chatUser) {
+        window.location.href = '/';
+        return;
+    }
+    
+    chatUsername.textContent = chatUser;
+    
+    // Connect to socket with authentication
+    socket.auth = { token, username };
+    socket.connect();
+    
+    // Join chat room
+    socket.emit('join_chat', { user1: currentUser, user2: chatUser });
+    
+    // Load chat messages
+    await loadChatMessages();
+    
+    // Mark messages as read
+    markMessagesAsRead();
+});
+
+// Socket events
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
+socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+});
+
+socket.on('user_online', (username) => {
+    if (username === chatUser) {
+        onlineStatus.textContent = 'Online';
+        onlineStatus.className = 'status-online';
+    }
+});
+
+socket.on('user_offline', (username) => {
+    if (username === chatUser) {
+        onlineStatus.textContent = 'Offline';
+        onlineStatus.className = 'status-offline';
+    }
+});
+
+socket.on('online_users', (users) => {
+    const isOnline = users.includes(chatUser);
+    onlineStatus.textContent = isOnline ? 'Online' : 'Offline';
+    onlineStatus.className = isOnline ? 'status-online' : 'status-offline';
+});
+
+socket.on('new_message', (data) => {
+    if (data.from === chatUser) {
+        addMessageToChat(data);
+        scrollToBottom();
+        markMessagesAsRead();
+    }
+});
+
+socket.on('message_sent', (data) => {
+    addMessageToChat(data);
+    scrollToBottom();
+});
+
+socket.on('user_typing', (data) => {
+    if (data.username === chatUser) {
+        showTypingIndicator();
+    }
+});
+
+socket.on('user_stop_typing', (data) => {
+    if (data.username === chatUser) {
+        hideTypingIndicator();
+    }
+});
+
+socket.on('messages_deleted', (data) => {
+    if (data.from === chatUser || data.to === chatUser) {
+        messages = [];
+        displayMessages();
+    }
+});
+
+socket.on('auth_error', (error) => {
+    console.error('Authentication error:', error);
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login';
+});
+
+// Event listeners
+backBtn.addEventListener('click', () => {
+    window.location.href = '/';
+});
+
+deleteAllBtn.addEventListener('click', async () => {
+    if (confirm('Yakin ingin menghapus semua pesan dalam chat ini?')) {
+        try {
+            const response = await fetch('/api/delete-messages', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ chatUser })
+            });
+            
+            if (response.ok) {
+                messages = [];
+                displayMessages();
+                socket.emit('delete_messages', { from: currentUser, to: chatUser });
+            } else {
+                alert('Gagal menghapus pesan');
+            }
+        } catch (error) {
+            console.error('Error deleting messages:', error);
+            alert('Terjadi kesalahan saat menghapus pesan');
+        }
+    }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Typing indicator
+messageInput.addEventListener('input', () => {
+    if (!isTyping) {
+        isTyping = true;
+        socket.emit('typing', { to: chatUser });
+    }
+    
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        isTyping = false;
+        socket.emit('stop_typing', { to: chatUser });
+    }, 1000);
+});
+
+messageInput.addEventListener('blur', () => {
+    if (isTyping) {
+        isTyping = false;
+        socket.emit('stop_typing', { to: chatUser });
+    }
+});
+
+// Functions
+async function loadChatMessages() {
+    try {
+        const response = await fetch(`/api/messages/${encodeURIComponent(chatUser)}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            messages = await response.json();
+            displayMessages();
+            scrollToBottom();
+        } else {
+            console.error('Failed to load messages');
+        }
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    }
+}
+
+function displayMessages() {
+    if (messages.length === 0) {
+        messageContainer.innerHTML = '<div class="no-messages">Belum ada pesan. Mulai percakapan!</div>';
+        return;
+    }
+    
+    const messagesHTML = messages.map(message => {
+        const isSent = message.from === currentUser;
+        const messageClass = isSent ? 'sent' : 'received';
+        const timeString = formatMessageTime(message.timestamp);
+        
+        return `
+            <div class="message ${messageClass}">
+                <div class="message-bubble">
+                    <div class="message-text">${escapeHtml(message.message)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    messageContainer.innerHTML = messagesHTML;
+}
+
+function addMessageToChat(messageData) {
+    messages.push(messageData);
+    displayMessages();
+}
+
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    
+    if (!message) {
+        return;
+    }
+    
+    // Clear input
+    messageInput.value = '';
+    
+    // Stop typing indicator
+    if (isTyping) {
+        isTyping = false;
+        socket.emit('stop_typing', { to: chatUser });
+    }
+    
+    try {
+        const response = await fetch('/api/send-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                to: chatUser,
+                message: message
+            })
+        });
+        
+        if (response.ok) {
+            const messageData = await response.json();
+            socket.emit('send_message', messageData);
+        } else {
+            alert('Gagal mengirim pesan');
+            messageInput.value = message; // Restore message
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Terjadi kesalahan saat mengirim pesan');
+        messageInput.value = message; // Restore message
+    }
+}
+
+async function markMessagesAsRead() {
+    try {
+        await fetch('/api/mark-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ from: chatUser })
+        });
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+    }
+}
+
+function showTypingIndicator() {
+    typingIndicator.style.display = 'block';
+}
+
+function hideTypingIndicator() {
+    typingIndicator.style.display = 'none';
+}
+
+function scrollToBottom() {
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+        return date.toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } else {
+        return date.toLocaleDateString('id-ID', { 
+            day: '2-digit', 
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Auto-focus message input
+messageInput.focus();</script>
+</body>
+</html>
