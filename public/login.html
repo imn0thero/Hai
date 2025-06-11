@@ -4,10 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #87cefa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+    }
+    .box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+    }
+    input, button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+    }
+    button {
+      background: white;
+      color: #333;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="login-page">
-  <div class="container">
+<body>
+  <div class="box">
     <h2>Login</h2>
     <input type="text" id="loginUsername" placeholder="Username">
     <input type="password" id="loginPassword" placeholder="Password">
@@ -15,20 +45,21 @@
     <p>Belum punya akun? <a href="signup.html">Daftar</a></p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <script>const socketLogin = io();
-document.getElementById('loginBtn').addEventListener('click', () => {
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-  socketLogin.emit('login', { username, password });
-});
-
-socketLogin.on('loginResult', data => {
-  if (data.success) {
-    localStorage.setItem('user', data.user);
-    window.location.href = 'index.html';
-  } else {
-    alert(data.message);
-  }
-});</script>
+  <script>
+    const socket = io();
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      socket.emit('login', { username, password });
+    });
+    socket.on('loginResult', data => {
+      if (data.success) {
+        localStorage.setItem('user', data.user);
+        window.location.href = 'index.html';
+      } else {
+        alert(data.message);
+      }
+    });
+  </script>
 </body>
 </html>
