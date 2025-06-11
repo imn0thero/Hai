@@ -1,17 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Index - Chat App</title>
+  <meta charset="UTF-8">
+  <title>Chat Index</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <button class="mode-toggle" onclick="toggleMode()">🌓</button>
-  <header>
-    <h2>Welcome, <span id="currentUser"></span></h2>
-    <input type="text" id="search" placeholder="Search username...">
+  <script>
+    const user = localStorage.getItem('user');
+    if (!user) location.href = 'login.html';
+  </script>
+
+  <div class="container">
+    <h2>Halo, <span id="currentUser"></span></h2>
+    <input type="text" id="search" placeholder="Cari pengguna...">
+    <ul id="userList"></ul>
     <button onclick="logout()">Logout</button>
-  </header>
-  <div class="container" id="userList"></div>
-  <script src="script.js"></script>
+  </div>
+
+  <script>
+    document.getElementById('currentUser').innerText = localStorage.getItem('user');
+
+    async function loadUsers() {
+      const res = await fetch('/users');
+      const users = await res.json();
+      const userList = document.getElementById('userList');
+      userList.innerHTML = '';
+      users.filter(u => u.username !== user).forEach(u => {
+        const li = document.createElement('li');
+        li.textContent = `${u.username} (${u.online ? 'Online' : 'Offline'})`;
+        li.onclick = () => {
+          localStorage.setItem('target', u.username);
+          location.href = 'chat.html';
+        };
+        userList.appendChild(li);
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', loadUsers);
+    loadUsers();
+
+    function logout() {
+      localStorage.removeItem('user');
+      location.href = 'login.html';
+    }
+  </script>
 </body>
 </html>
