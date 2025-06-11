@@ -1,40 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Sign Up</title>
+  <title>Signup</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h2>Sign Up</h2>
-    <form id="signupForm">
-      <input type="text" id="username" placeholder="Username" required><br>
-      <input type="password" id="password" placeholder="Password" required><br>
-      <button type="submit">Sign Up</button>
-    </form>
+    <h2>Signup</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="signup()">Signup</button>
     <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
-
-  <script>
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      const res = await fetch('/signup', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, password })
-      });
-
-      if (res.ok) {
-        alert('Pendaftaran berhasil, silakan login.');
-        location.href = 'login.html';
-      } else {
-        alert('Username sudah digunakan.');
-      }
-    });
-  </script>
+<script>
+function signup() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  fetch('/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  }).then(res => {
+    if (res.ok) {
+      alert('Akun dibuat!');
+      window.location.href = 'login.html';
+    } else {
+      alert('Username sudah digunakan');
+    }
+  });
+}
+</script>
 </body>
 </html>
