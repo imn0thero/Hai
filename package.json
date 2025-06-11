@@ -1,20 +1,17 @@
 {
-  "name": "simple-chat-app",
+  "name": "private-chat-app",
   "version": "1.0.0",
-  "description": "A simple real-time chat app using Node.js, Express, Socket.IO, and JSON file storage.",
+  "description": "A private real-time chat app with user authentication, dark mode, and JSON data storage.",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "node app.js"
   },
-  "keywords": ["chat", "nodejs", "express", "socket.io", "json"],
   "author": "Azz",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.20.2",
     "express": "^4.18.4",
+    "fs-extra": "^11.2.0",
     "socket.io": "^4.7.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.3"
   }
 }
