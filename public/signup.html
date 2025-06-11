@@ -3,61 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <title>Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background: skyblue;
-      font-family: Arial, sans-serif;
-      color: white;
       margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e6f7ff;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
+      color: #ffffff;
     }
+
     .box {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #000;
+      background-color: #87cefa;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 350px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button {
+
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    input {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
+      margin-bottom: 12px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-size: 1em;
     }
+
     button {
-      background: white;
-      color: skyblue;
+      width: 100%;
+      padding: 10px;
+      background-color: #ffffff;
+      color: #007acc;
       font-weight: bold;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 12px;
+      color: #fff;
+    }
+
+    .link a {
+      color: white;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <div class="box">
-    <h2>Signup</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" type="password" placeholder="Password" />
+    <h2>Daftar</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="signup()">Signup</button>
-    <p id="error" style="color: red;"></p>
+    <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
   </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+
     function signup() {
       const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      socket.emit('signup', { username, password });
-    }
-    socket.on('signupResult', res => {
-      if (res.success) {
-        window.location.href = 'login.html';
-      } else {
-        document.getElementById('error').innerText = res.message;
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        alert("Isi semua field!");
+        return;
       }
-    });
+
+      socket.emit("signup", { username, password });
+
+      socket.on("signupResult", res => {
+        if (res.success) {
+          alert("Pendaftaran berhasil. Silakan login.");
+          window.location.href = "login.html";
+        } else {
+          alert(res.message);
+        }
+      });
+    }
   </script>
 </body>
 </html>
