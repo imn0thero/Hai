@@ -1,63 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login</title>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #87cefa;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      background: #87CEFA;
+      font-family: sans-serif;
       color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
     .box {
       background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
       padding: 30px;
-      border-radius: 15px;
-      backdrop-filter: blur(10px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      width: 300px;
+      text-align: center;
     }
-    input, button {
-      display: block;
-      margin: 10px 0;
+    input {
+      width: 90%;
       padding: 10px;
-      width: 100%;
+      margin: 10px 0;
       border: none;
-      border-radius: 10px;
+      border-radius: 6px;
     }
     button {
+      padding: 10px 20px;
+      border: none;
       background: white;
-      color: #333;
+      color: #87CEFA;
+      font-weight: bold;
+      border-radius: 6px;
       cursor: pointer;
+    }
+    a {
+      color: white;
+      text-decoration: underline;
+      display: block;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="box">
     <h2>Login</h2>
-    <input type="text" id="loginUsername" placeholder="Username">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <p>Belum punya akun? <a href="signup.html">Daftar</a></p>
+    <input type="text" id="username" placeholder="Username" /><br />
+    <input type="password" id="password" placeholder="Password" /><br />
+    <button onclick="login()">Login</button>
+    <a href="/signup.html">Belum punya akun?</a>
   </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      const username = document.getElementById('loginUsername').value;
-      const password = document.getElementById('loginPassword').value;
+
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
       socket.emit('login', { username, password });
-    });
-    socket.on('loginResult', data => {
-      if (data.success) {
-        localStorage.setItem('user', data.user);
-        window.location.href = 'index.html';
+    }
+
+    socket.on('loginResult', res => {
+      if (res.success) {
+        localStorage.setItem('user', res.user);
+        window.location.href = '/';
       } else {
-        alert(data.message);
+        alert(res.message);
       }
     });
   </script>
