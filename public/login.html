@@ -29,6 +29,90 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/login.js"></script>
+    <script>// ====== public/js/login.js ======
+const socket = io();
+const loginForm = document.getElementById('loginForm');
+const messageDiv = document.getElementById('message');
+
+// Check if user is already logged in
+window.addEventListener('load', () => {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+    
+    if (token && username) {
+        window.location.href = '/';
+    }
+});
+
+// Handle login form submission
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        showMessage('Semua field harus diisi!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Save token and username to localStorage
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            
+            showMessage('Login berhasil!', 'success');
+            
+            // Redirect to main page after short delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        } else {
+            showMessage(data.message || 'Login gagal!', 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showMessage('Terjadi kesalahan saat login!', 'error');
+    }
+});
+
+// Show message function
+function showMessage(message, type) {
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    // Hide message after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
+}
+
+// Socket events
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
+socket.on('disconnect', () => {
+    console.log('Disconnected from server');
+});
+
+// Handle Enter key press
+document.getElementById('password').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        loginForm.dispatchEvent(new Event('submit'));
+    }
+});</script>
 </body>
 </html>
