@@ -71,30 +71,32 @@
     <div class="link">Belum punya akun? <a href="signup.html">Daftar</a></div>
   </div>
 
+  
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
+<script>
+  const socket = io();
 
-    function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
+  function login() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
 
-      if (!username || !password) {
-        alert("Isi semua field!");
-        return;
-      }
-
-      socket.emit("login", { username, password });
-
-      socket.on("loginResult", res => {
-        if (res.success) {
-          localStorage.setItem("chat_user", username);
-          window.location.href = "index.html";
-        } else {
-          alert(res.message);
-        }
-      });
+    if (!username || !password) {
+      alert("Isi semua field!");
+      return;
     }
-  </script>
+
+    socket.emit("login", { username, password });
+  }
+
+  socket.on("loginResult", res => {
+    if (res.success) {
+      localStorage.setItem("chat_user", res.user);
+      window.location.href = "index.html";
+    } else {
+      alert(res.message);
+    }
+  });
+</script>
+
 </body>
 </html>
