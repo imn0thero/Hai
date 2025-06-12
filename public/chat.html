@@ -1,71 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="/socket.io/socket.io.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat 1-on-1</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Chat dengan <span id="peer"></span></h2>
-    <div id="chatBox" class="chat-box"></div>
-    <input type="text" id="message" placeholder="Tulis pesan">
-    <button onclick="sendMessage()">Kirim</button>
-    <button onclick="clearChat()">Hapus Semua</button>
-    <button onclick="back()">Kembali</button>
+    <button onclick="goBack()">⬅ Kembali</button>
+    <h2>Chat dengan <span id="chatWith"></span></h2>
+    <p>Status: <span id="status">Offline</span></p>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Tulis pesan..." autocomplete="off" required />
+      <button type="submit">Kirim</button>
+    </form>
+
+    <button onclick="deleteAllMessages()">Hapus Semua Pesan</button>
   </div>
-<script>
-if (!localStorage.getItem('user') || !localStorage.getItem('peer')) location.href = 'index.html';
 
-const socket = io();
-const me = localStorage.getItem('user');
-const peer = localStorage.getItem('peer');
-document.getElementById('peer').innerText = peer;
-const pairKey = [me, peer].sort().join('_');
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const currentUser = localStorage.getItem("username");
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatWith = urlParams.get("user");
 
-socket.emit('register', me);
+    if (!currentUser || !chatWith) {
+      window.location.href = "index.html";
+    }
 
-socket.on('message', showMessage);
+    document.getElementById("chatWith").textContent = chatWith;
 
-function loadMessages() {
-  fetch('/messages/' + pairKey)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('chatBox').innerHTML = '';
-      const now = Date.now();
-      data.filter(m => now - m.timestamp < 86400000)
-          .forEach(showMessage);
+    const chatBox = document.getElementById("chatBox");
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    function appendMessage(msg, isOwn) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble " + (isOwn ? "right" : "left");
+      bubble.innerHTML = `${msg.text}<br><small>${formatTime(msg.time)}</small>`;
+      chatBox.appendChild(bubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Load chat history
+    async function loadChat() {
+      const res = await fetch(`/messages/${currentUser}/${chatWith}`);
+      if (res.ok) {
+        const messages = await res.json();
+        chatBox.innerHTML = "";
+        messages.forEach(msg => appendMessage(msg, msg.from === currentUser));
+      }
+    }
+
+    // Update online status
+    socket.emit("join", currentUser);
+    socket.emit("checkOnline", chatWith);
+
+    socket.on("onlineStatus", (user, isOnline) => {
+      if (user === chatWith) {
+        document.getElementById("status").textContent = isOnline ? "Online" : "Offline";
+      }
     });
-}
 
-function showMessage(msg) {
-  if ([msg.from, msg.to].includes(me) && [msg.from, msg.to].includes(peer)) {
-    const div = document.createElement('div');
-    div.className = 'bubble ' + (msg.from === me ? 'right' : 'left');
-    div.textContent = msg.text;
-    document.getElementById('chatBox').appendChild(div);
-    document.getElementById('chatBox').scrollTop = 999999;
-  }
-}
+    // Kirim pesan
+    document.getElementById("messageForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = document.getElementById("messageInput").value.trim();
+      if (!text) return;
 
-function sendMessage() {
-  const text = document.getElementById('message').value;
-  if (!text.trim()) return;
-  socket.emit('private-message', { from: me, to: peer, text });
-  document.getElementById('message').value = '';
-}
+      const msg = { from: currentUser, to: chatWith, text, time: Date.now() };
+      socket.emit("privateMessage", msg);
+      appendMessage(msg, true);
+      document.getElementById("messageInput").value = "";
 
-function clearChat() {
-  fetch('/messages/' + pairKey + '/clear', { method: 'POST' })
-    .then(() => loadMessages());
-}
+      await fetch("/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(msg)
+      });
+    });
 
-function back() {
-  localStorage.removeItem('peer');
-  window.location.href = 'index.html';
-}
+    // Terima pesan
+    socket.on("privateMessage", (msg) => {
+      if (msg.from === chatWith && msg.to === currentUser) {
+        appendMessage(msg, false);
+      }
+    });
 
-loadMessages();
-</script>
+    function deleteAllMessages() {
+      if (confirm("Hapus semua pesan?")) {
+        fetch(`/messages/${currentUser}/${chatWith}`, {
+          method: "DELETE"
+        }).then(() => {
+          chatBox.innerHTML = "";
+        });
+      }
+    }
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    loadChat();
+  </script>
 </body>
 </html>
