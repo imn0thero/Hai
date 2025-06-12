@@ -25,6 +25,15 @@ app.get('/users.json', (req, res) => {
 app.get('/messages.json', (req, res) => {
   res.sendFile(MSG_FILE);
 });
+app.post('/signup', (req, res) => {
+  // ...logika...
+  res.json({ success: true }); // HARUS ADA ini
+});
+
+app.post('/login', (req, res) => {
+  // ...logika...
+  res.json({ success: true }); // HARUS ADA ini
+});
 
 let onlineUsers = [];
 
