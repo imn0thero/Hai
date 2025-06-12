@@ -17,28 +17,37 @@
     <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-   <script>
-  const socket = io();
+  <script>
+    const socket = io();
 
-    document.getElementById("signupForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+    document.getElementById('signupBtn').onclick = () => {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
 
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+      if (!username || !password) {
+        showMessage('Username dan password wajib diisi');
+        return;
+      }
 
-      if (res.ok) {
-        alert("Berhasil daftar! Silakan login.");
-        window.location.href = "login.html";
+      socket.emit('signup', { username, password });
+    };
+
+    socket.on('signupResult', res => {
+      if (res.success) {
+        showMessage('Daftar berhasil, silakan login', 'green');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 2000);
       } else {
-        const data = await res.json();
-        alert(data.message || "Gagal daftar.");
+        showMessage(res.message);
       }
     });
+
+    function showMessage(msg, color = 'red') {
+      const el = document.getElementById('msg');
+      el.innerText = msg;
+      el.style.color = color;
+    }
   </script>
 </body>
 </html>
