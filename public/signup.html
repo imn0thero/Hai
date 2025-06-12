@@ -16,8 +16,10 @@
     </form>
     <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
+  <script src="/socket.io/socket.io.js"></script>
+   <script>
+  const socket = io();
 
-  <script>
     document.getElementById("signupForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value;
