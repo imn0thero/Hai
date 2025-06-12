@@ -1,7 +1,7 @@
 {
-  "name": "private-chat-app",
+  "name": "chat-app",
   "version": "1.0.0",
-  "description": "A private real-time chat app with user authentication, dark mode, and JSON data storage.",
+  "description": "A simple 1-on-1 real-time chat app using Express and Socket.IO with JSON file storage.",
   "main": "app.js",
   "scripts": {
     "start": "node app.js"
@@ -9,9 +9,7 @@
   "author": "Azz",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "express": "^4.18.4",
-    "fs-extra": "^11.2.0",
+    "express": "^4.18.2",
     "socket.io": "^4.7.2"
   }
 }
