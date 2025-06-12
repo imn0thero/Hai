@@ -3,113 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat 1-on-1</title>
+  <title>Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <button onclick="goBack()">⬅ Kembali</button>
-    <h2>Chat dengan <span id="chatWith"></span></h2>
-    <p>Status: <span id="status">Offline</span></p>
+  <div class="chat-header">
+    <button onclick="location.href='index.html'">⬅ Kembali</button>
+    <h2 id="chatWith">Chat dengan ...</h2>
+    <span id="status">Offline</span>
+    <button onclick="clearMessages()" class="delete-button">🗑 Hapus Semua</button>
+  </div>
 
-    <div class="chat-box" id="chatBox"></div>
+  <div id="messages" class="chat-messages"></div>
 
-    <form id="messageForm">
-      <input type="text" id="messageInput" placeholder="Tulis pesan..." autocomplete="off" required />
-      <button type="submit">Kirim</button>
-    </form>
-
-    <button onclick="deleteAllMessages()">Hapus Semua Pesan</button>
+  <div class="input-container">
+    <input type="text" id="messageInput" placeholder="Tulis pesan..." />
+    <button onclick="sendMessage()">Kirim</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const currentUser = localStorage.getItem("username");
-    const urlParams = new URLSearchParams(window.location.search);
-    const chatWith = urlParams.get("user");
+    const currentUser = localStorage.getItem('username');
+    const targetUser = localStorage.getItem('chatWith');
+    const chatTitle = document.getElementById('chatWith');
+    const statusEl = document.getElementById('status');
 
-    if (!currentUser || !chatWith) {
-      window.location.href = "index.html";
+    chatTitle.textContent = `Chat dengan ${targetUser}`;
+
+    socket.emit('joinPrivateRoom', { user1: currentUser, user2: targetUser });
+    socket.emit('requestStatus', targetUser);
+
+    socket.on('statusResult', status => {
+      statusEl.textContent = status ? 'Online' : 'Offline';
+      statusEl.style.color = status ? 'limegreen' : 'gray';
+    });
+
+    socket.on('loadMessages', messages => {
+      const msgBox = document.getElementById('messages');
+      msgBox.innerHTML = '';
+      messages.forEach(addMessage);
+    });
+
+    socket.on('newMessage', addMessage);
+
+    function addMessage({ sender, text }) {
+      const msgBox = document.getElementById('messages');
+      const msg = document.createElement('div');
+      msg.className = sender === currentUser ? 'bubble right' : 'bubble left';
+      msg.textContent = text;
+      msgBox.appendChild(msg);
+      msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    document.getElementById("chatWith").textContent = chatWith;
-
-    const chatBox = document.getElementById("chatBox");
-
-    function formatTime(ts) {
-      const d = new Date(ts);
-      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-    }
-
-    function appendMessage(msg, isOwn) {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble " + (isOwn ? "right" : "left");
-      bubble.innerHTML = `${msg.text}<br><small>${formatTime(msg.time)}</small>`;
-      chatBox.appendChild(bubble);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Load chat history
-    async function loadChat() {
-      const res = await fetch(`/messages/${currentUser}/${chatWith}`);
-      if (res.ok) {
-        const messages = await res.json();
-        chatBox.innerHTML = "";
-        messages.forEach(msg => appendMessage(msg, msg.from === currentUser));
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (text) {
+        socket.emit('privateMessage', {
+          from: currentUser,
+          to: targetUser,
+          text
+        });
+        input.value = '';
       }
     }
 
-    // Update online status
-    socket.emit("join", currentUser);
-    socket.emit("checkOnline", chatWith);
-
-    socket.on("onlineStatus", (user, isOnline) => {
-      if (user === chatWith) {
-        document.getElementById("status").textContent = isOnline ? "Online" : "Offline";
-      }
-    });
-
-    // Kirim pesan
-    document.getElementById("messageForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = document.getElementById("messageInput").value.trim();
-      if (!text) return;
-
-      const msg = { from: currentUser, to: chatWith, text, time: Date.now() };
-      socket.emit("privateMessage", msg);
-      appendMessage(msg, true);
-      document.getElementById("messageInput").value = "";
-
-      await fetch("/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(msg)
-      });
-    });
-
-    // Terima pesan
-    socket.on("privateMessage", (msg) => {
-      if (msg.from === chatWith && msg.to === currentUser) {
-        appendMessage(msg, false);
-      }
-    });
-
-    function deleteAllMessages() {
-      if (confirm("Hapus semua pesan?")) {
-        fetch(`/messages/${currentUser}/${chatWith}`, {
-          method: "DELETE"
-        }).then(() => {
-          chatBox.innerHTML = "";
+    function clearMessages() {
+      if (confirm('Hapus semua pesan dengan ' + targetUser + '?')) {
+        socket.emit('clearConversation', {
+          user1: currentUser,
+          user2: targetUser
         });
       }
     }
-
-    function goBack() {
-      window.location.href = "index.html";
-    }
-
-    loadChat();
   </script>
 </body>
 </html>
