@@ -1,34 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Signup</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signup - ChatApp</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Signup</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="signup()">Signup</button>
-    <p>Sudah punya akun? <a href="login.html">Login</a></p>
+    <h2>Daftar Akun</h2>
+    <form id="signupForm">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Daftar</button>
+      <p>Sudah punya akun? <a href="login.html">Login</a></p>
+    </form>
   </div>
-<script>
-function signup() {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  fetch('/signup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  }).then(res => {
-    if (res.ok) {
-      alert('Akun dibuat!');
-      window.location.href = 'login.html';
-    } else {
-      alert('Username sudah digunakan');
-    }
-  });
-}
-</script>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Pendaftaran berhasil! Silakan login.");
+        window.location.href = "login.html";
+      } else {
+        alert(data.message || "Gagal mendaftar.");
+      }
+    });
+  </script>
 </body>
 </html>
