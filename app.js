@@ -10,6 +10,12 @@ const io = new Server(server);
 const USERS_FILE = path.join(__dirname, 'users.json');
 const MSG_FILE = path.join(__dirname, 'messages.json');
 
+app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.url}`);
+  next();
+});
+
 app.use(express.static(__dirname));
 
 app.get('/users.json', (req, res) => {
