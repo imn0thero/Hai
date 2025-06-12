@@ -2,23 +2,23 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Signup - ChatApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daftar</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Daftar Akun</h2>
+    <h2>Daftar</h2>
     <form id="signupForm">
-      <input type="text" id="username" placeholder="Username" required />
-      <input type="password" id="password" placeholder="Password" required />
+      <input type="text" placeholder="Username" id="username" required />
+      <input type="password" placeholder="Password" id="password" required />
       <button type="submit">Daftar</button>
-      <p>Sudah punya akun? <a href="login.html">Login</a></p>
     </form>
+    <p>Sudah punya akun? <a href="login.html">Login</a></p>
   </div>
 
   <script>
-    document.getElementById("signupForm").addEventListener("submit", async function (e) {
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
@@ -26,15 +26,15 @@
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password })
       });
 
-      const data = await res.json();
       if (res.ok) {
-        alert("Pendaftaran berhasil! Silakan login.");
+        alert("Berhasil daftar! Silakan login.");
         window.location.href = "login.html";
       } else {
-        alert(data.message || "Gagal mendaftar.");
+        const data = await res.json();
+        alert(data.message || "Gagal daftar.");
       }
     });
   </script>
