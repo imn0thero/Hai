@@ -38,6 +38,15 @@
         document.getElementById('error').textContent = data.message;
       }
     });
+    if (data.success) {
+  alert('Akun berhasil dibuat!');
+  localStorage.setItem('username', username);
+  window.location.href = 'index.html';
+} else {
+  document.getElementById('error').textContent = data.message;
+}
+res.json({ success: true });
+
   </script>
 </body>
 </html>
