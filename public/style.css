@@ -1,63 +1,47 @@
+/* style.css */
+
 body {
-  font-family: sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f5f5f5;
-  color: #fff;
-  transition: background 0.3s, color 0.3s;
-}
-
-body.dark-mode {
-  background: #111;
-  color: #fff;
 }
 
 .container {
-  max-width: 600px;
-  margin: 20px auto;
+  max-width: 500px;
+  margin: 30px auto;
   padding: 20px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background-color: #121212;
+  color: white;
+  border: 1px solid #444;
   border-radius: 8px;
-  color: #000;
-}
-
-body.dark-mode .container {
-  background: #222;
-  border-color: #444;
-  color: #fff;
+  box-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 
 input[type="text"],
 input[type="password"] {
-  width: calc(100% - 22px);
-  margin-bottom: 10px;
+  width: 100%;
   padding: 10px;
-  border: 1px solid #999;
-  border-radius: 5px;
-  background: #fff;
-  color: #000;
-}
-
-body.dark-mode input[type="text"],
-body.dark-mode input[type="password"] {
-  background: #333;
+  margin: 10px 0;
+  background-color: #1e1e1e;
+  color: white;
   border: 1px solid #555;
-  color: #fff;
+  border-radius: 4px;
 }
 
 button {
-  padding: 10px 20px;
+  padding: 10px 15px;
   margin: 5px 0;
+  background-color: #333;
+  color: white;
   border: none;
-  border-radius: 5px;
-  background: #333;
-  color: #fff;
+  border-radius: 4px;
   cursor: pointer;
 }
 
 button:hover {
-  background: #555;
+  background-color: #555;
 }
 
 ul {
@@ -66,64 +50,69 @@ ul {
 }
 
 li {
-  background: #eee;
-  color: #000;
   padding: 10px;
-  margin: 5px 0;
-  border: 1px solid #ccc;
+  border-bottom: 1px solid #333;
   cursor: pointer;
 }
 
-body.dark-mode li {
-  background: #444;
-  color: #fff;
-  border-color: #666;
+li:hover {
+  background-color: #1e1e1e;
 }
 
 .chat-box {
-  height: 300px;
+  max-height: 300px;
   overflow-y: auto;
-  background: #f0f0f0;
+  margin: 10px 0;
+  border: 1px solid #333;
   padding: 10px;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-
-body.dark-mode .chat-box {
   background: #1a1a1a;
-  border-color: #444;
 }
 
 .bubble {
+  padding: 8px 12px;
+  margin: 6px 0;
+  border-radius: 16px;
   max-width: 70%;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 10px;
   clear: both;
   word-wrap: break-word;
 }
 
-.left {
-  background: #e0e0e0;
-  color: #000;
+.bubble.left {
+  background-color: #333;
   float: left;
-  border: 1px solid #ccc;
+  color: white;
 }
 
-.right {
-  background: #4a90e2;
-  color: #fff;
+.bubble.right {
+  background-color: #0066cc;
   float: right;
-  border: 1px solid #0077cc;
+  color: white;
 }
 
-body.dark-mode .left {
-  background: #333;
-  color: #fff;
-  border-color: #555;
+.bubble small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 4px;
 }
 
-body.dark-mode .right {
-  background: #0055aa;
-  border-color: #0077cc;
+@media (max-width: 600px) {
+  .container {
+    margin: 15px;
+    padding: 15px;
+  }
+
+  .chat-box {
+    max-height: 50vh;
+  }
+
+  .bubble {
+    font-size: 14px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  button {
+    font-size: 16px;
+  }
 }
