@@ -2,80 +2,79 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatApp - Beranda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Beranda</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Selamat datang, <span id="currentUser"></span></h2>
-    
-    <input type="text" id="searchInput" placeholder="Cari username..." autocomplete="off" />
+    <h2>Daftar Chat</h2>
+    <input type="text" id="searchInput" placeholder="Cari username..." />
     <ul id="searchResults"></ul>
 
-    <h3>Chat Terakhir</h3>
+    <h3>Chat Sebelumnya</h3>
     <ul id="chatList"></ul>
-
-    <button onclick="logout()">Logout</button>
   </div>
+
   <script src="/socket.io/socket.io.js"></script>
-<script>
-  const socket = io();
-    const currentUser = localStorage.getItem("username");
-    if (!currentUser) {
+  <script>
+    const username = localStorage.getItem("username");
+    if (!username) {
       window.location.href = "login.html";
-    } else {
-      document.getElementById("currentUser").textContent = currentUser;
     }
 
-    async function fetchUsers() {
-      const res = await fetch("/users");
-      return res.ok ? res.json() : [];
-    }
+    const socket = io();
+    socket.emit("user_connected", username);
 
-    async function fetchChatList() {
-      const res = await fetch(`/chatlist/${currentUser}`);
-      return res.ok ? res.json() : [];
-    }
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+    const chatList = document.getElementById("chatList");
 
-    // Tampilkan hasil pencarian
-    document.getElementById("searchInput").addEventListener("input", async (e) => {
-      const keyword = e.target.value.trim().toLowerCase();
-      const users = await fetchUsers();
-      const results = users.filter(u => u !== currentUser && u.toLowerCase().includes(keyword));
-      const searchResults = document.getElementById("searchResults");
-      searchResults.innerHTML = "";
-      results.forEach(username => {
-        const li = document.createElement("li");
-        li.textContent = username;
-        li.onclick = () => {
-          window.location.href = `chat.html?user=${username}`;
-        };
-        searchResults.appendChild(li);
+    async function loadUsers() {
+      const res = await fetch("/api/users");
+      const users = await res.json();
+
+      searchInput.addEventListener("input", () => {
+        const val = searchInput.value.toLowerCase();
+        searchResults.innerHTML = "";
+        users
+          .filter(u => u !== username && u.toLowerCase().includes(val))
+          .forEach(u => {
+            const li = document.createElement("li");
+            li.textContent = u;
+            li.onclick = () => {
+              window.location.href = `chat.html?with=${u}`;
+            };
+            searchResults.appendChild(li);
+          });
       });
-    });
 
-    // Tampilkan daftar chat
-    async function renderChatList() {
-      const list = await fetchChatList();
-      const chatList = document.getElementById("chatList");
-      chatList.innerHTML = "";
-      list.forEach(chat => {
+      loadChatList(users);
+    }
+
+    async function loadChatList(users) {
+      const res = await fetch("/api/messages");
+      const messages = await res.json();
+      const userMap = {};
+
+      messages.forEach(msg => {
+        const other = msg.from === username ? msg.to : msg.from;
+        if (!userMap[other] || new Date(msg.timestamp) > new Date(userMap[other].timestamp)) {
+          userMap[other] = msg;
+        }
+      });
+
+      Object.keys(userMap).forEach(user => {
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${chat.username}</strong><br><small>${chat.lastMessage}</small>`;
+        li.textContent = `${user}: ${userMap[user].text}`;
         li.onclick = () => {
-          window.location.href = `chat.html?user=${chat.username}`;
+          window.location.href = `chat.html?with=${user}`;
         };
         chatList.appendChild(li);
       });
     }
 
-    function logout() {
-      localStorage.removeItem("username");
-      window.location.href = "login.html";
-    }
-
-    renderChatList();
+    loadUsers();
   </script>
 </body>
 </html>
