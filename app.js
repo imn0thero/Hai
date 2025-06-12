@@ -1,141 +1,118 @@
 const express = require('express');
-const fs = require('fs');
 const http = require('http');
-const socketIo = require('socket.io');
+const { Server } = require('socket.io');
+const fs = require('fs');
 const path = require('path');
-
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new Server(server);
 
-app.use(express.static(__dirname + '/public'));
-app.use(express.json());
+const USERS_FILE = path.join(__dirname, 'users.json');
+const MSG_FILE = path.join(__dirname, 'messages.json');
 
-const USERS_FILE = './data/users.json';
-const MESSAGES_FILE = './data/messages.json';
+app.use(express.static(__dirname));
 
-function readJson(file) {
-  if (!fs.existsSync(file)) return [];
-  return JSON.parse(fs.readFileSync(file));
+app.get('/users.json', (req, res) => {
+  res.sendFile(USERS_FILE);
+});
+
+app.get('/messages.json', (req, res) => {
+  res.sendFile(MSG_FILE);
+});
+
+let onlineUsers = [];
+
+function readJSON(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file));
+  } catch {
+    return {};
+  }
 }
 
-function writeJson(file, data) {
+function saveJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// Cek login
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const users = readJson(USERS_FILE);
-  const found = users.find(u => u.username === username && u.password === password);
-  if (found) {
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ success: false, message: 'Login gagal' });
-  }
-});
-
-// Signup
-app.post('/api/signup', (req, res) => {
-  const { username, password } = req.body;
-  const users = readJson(USERS_FILE);
-  if (users.find(u => u.username === username)) {
-    return res.status(400).json({ success: false, message: 'Username sudah ada' });
-  }
-  users.push({ username, password });
-  writeJson(USERS_FILE, users);
-  res.json({ success: true });
-});
-
-// Kirim pesan
-app.post('/messages', (req, res) => {
-  const msg = req.body;
-  const messages = readJson(MESSAGES_FILE);
-  messages.push(msg);
-  writeJson(MESSAGES_FILE, messages);
-  res.json({ success: true });
-});
-
-// Ambil pesan antar 2 user
-app.get('/messages/:user1/:user2', (req, res) => {
-  const { user1, user2 } = req.params;
-  const messages = readJson(MESSAGES_FILE);
-  const filtered = messages.filter(
-    m => (m.from === user1 && m.to === user2) || (m.from === user2 && m.to === user1)
-  );
-  res.json(filtered);
-});
-
-// Hapus semua pesan antar 2 user
-app.delete('/messages/:user1/:user2', (req, res) => {
-  const { user1, user2 } = req.params;
-  let messages = readJson(MESSAGES_FILE);
-  messages = messages.filter(
-    m => !( (m.from === user1 && m.to === user2) || (m.from === user2 && m.to === user1) )
-  );
-  writeJson(MESSAGES_FILE, messages);
-  res.json({ success: true });
-});
-
-// Daftar pengguna
-app.get('/api/users', (req, res) => {
-  const users = readJson(USERS_FILE);
-  res.json(users.map(u => u.username));
-});
-
-// Terakhir pesan tiap user untuk index
-app.get('/api/last-messages/:user', (req, res) => {
-  const { user } = req.params;
-  const messages = readJson(MESSAGES_FILE);
-  const chatMap = {};
-  for (const m of messages) {
-    const other = m.from === user ? m.to : (m.to === user ? m.from : null);
-    if (!other) continue;
-    if (!chatMap[other] || m.time > chatMap[other].time) {
-      chatMap[other] = m;
-    }
-  }
-  res.json(Object.values(chatMap));
-});
-
-// Hapus otomatis pesan > 24 jam
-setInterval(() => {
-  let messages = readJson(MESSAGES_FILE);
+function cleanupOldMessages() {
+  const data = readJSON(MSG_FILE);
   const now = Date.now();
-  messages = messages.filter(msg => now - msg.time < 24 * 3600000);
-  writeJson(MESSAGES_FILE, messages);
-}, 3600000); // setiap 1 jam
+  let changed = false;
+  for (const key in data) {
+    data[key] = data[key].filter(msg => now - msg.timestamp < 24 * 3600 * 1000);
+    if (!data[key].length) delete data[key];
+    changed = true;
+  }
+  if (changed) saveJSON(MSG_FILE, data);
+}
 
-// Socket.IO untuk status online dan chat
-let onlineUsers = {};
+setInterval(cleanupOldMessages, 60 * 1000);
 
 io.on('connection', socket => {
-  socket.on('join', username => {
-    onlineUsers[username] = socket.id;
-    io.emit('onlineStatus', username, true);
+  let currentUser = null;
+
+  socket.on('signup', ({ username, password }) => {
+    const users = readJSON(USERS_FILE);
+    if (users[username]) {
+      socket.emit('signupResult', { success: false, message: 'Username sudah digunakan' });
+    } else {
+      users[username] = password;
+      saveJSON(USERS_FILE, users);
+      socket.emit('signupResult', { success: true });
+    }
+  });
+
+  socket.on('login', ({ username, password }) => {
+    const users = readJSON(USERS_FILE);
+    if (users[username] === password) {
+      currentUser = username;
+      if (!onlineUsers.includes(username)) onlineUsers.push(username);
+      socket.emit('loginResult', { success: true });
+      io.emit('userList', onlineUsers);
+    } else {
+      socket.emit('loginResult', { success: false });
+    }
+  });
+
+  socket.on('joinPrivateRoom', ({ user1, user2 }) => {
+    const room = [user1, user2].sort().join('__');
+    socket.join(room);
+
+    const data = readJSON(MSG_FILE);
+    const messages = (data[room] || []).filter(m => Date.now() - m.timestamp < 24 * 3600 * 1000);
+    socket.emit('loadMessages', messages);
+  });
+
+  socket.on('privateMessage', ({ from, to, text }) => {
+    const room = [from, to].sort().join('__');
+    const data = readJSON(MSG_FILE);
+    if (!data[room]) data[room] = [];
+    const message = { sender: from, receiver: to, text, timestamp: Date.now() };
+    data[room].push(message);
+    saveJSON(MSG_FILE, data);
+    io.to(room).emit('newMessage', message);
+  });
+
+  socket.on('clearConversation', ({ user1, user2 }) => {
+    const data = readJSON(MSG_FILE);
+    const room = [user1, user2].sort().join('__');
+    if (data[room]) {
+      delete data[room];
+      saveJSON(MSG_FILE, data);
+      io.to(room).emit('loadMessages', []);
+    }
+  });
+
+  socket.on('requestStatus', username => {
+    socket.emit('statusResult', onlineUsers.includes(username));
   });
 
   socket.on('disconnect', () => {
-    for (const user in onlineUsers) {
-      if (onlineUsers[user] === socket.id) {
-        delete onlineUsers[user];
-        io.emit('onlineStatus', user, false);
-      }
-    }
-  });
-
-  socket.on('checkOnline', username => {
-    const isOnline = !!onlineUsers[username];
-    socket.emit('onlineStatus', username, isOnline);
-  });
-
-  socket.on('privateMessage', msg => {
-    const targetSocket = onlineUsers[msg.to];
-    if (targetSocket) {
-      io.to(targetSocket).emit('privateMessage', msg);
+    if (currentUser) {
+      onlineUsers = onlineUsers.filter(u => u !== currentUser);
+      io.emit('userList', onlineUsers);
     }
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+server.listen(3000, () => console.log('Server running on http://localhost:3000'));
