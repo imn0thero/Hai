@@ -18,8 +18,9 @@
 
     <button onclick="logout()">Logout</button>
   </div>
-
-  <script>
+  <script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
     const currentUser = localStorage.getItem("username");
     if (!currentUser) {
       window.location.href = "login.html";
