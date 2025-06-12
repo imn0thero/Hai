@@ -2,79 +2,52 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Beranda</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Daftar Chat</title>
 </head>
 <body>
-  <div class="container">
-    <h2>Daftar Chat</h2>
-    <input type="text" id="searchInput" placeholder="Cari username..." />
-    <ul id="searchResults"></ul>
+  <h2>Selamat datang, <span id="username"></span></h2>
+  <input type="text" id="search" placeholder="Cari username...">
+  <ul id="results"></ul>
 
-    <h3>Chat Sebelumnya</h3>
-    <ul id="chatList"></ul>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const username = localStorage.getItem("username");
-    if (!username) {
-      window.location.href = "login.html";
-    }
+    const currentUser = localStorage.getItem('username');
+    if (!currentUser) location.href = 'login.html';
+    document.getElementById('username').textContent = currentUser;
 
-    const socket = io();
-    socket.emit("user_connected", username);
-
-    const searchInput = document.getElementById("searchInput");
-    const searchResults = document.getElementById("searchResults");
-    const chatList = document.getElementById("chatList");
-
-    async function loadUsers() {
-      const res = await fetch("/api/users");
-      const users = await res.json();
-
-      searchInput.addEventListener("input", () => {
-        const val = searchInput.value.toLowerCase();
-        searchResults.innerHTML = "";
-        users
-          .filter(u => u !== username && u.toLowerCase().includes(val))
-          .forEach(u => {
-            const li = document.createElement("li");
-            li.textContent = u;
-            li.onclick = () => {
-              window.location.href = `chat.html?with=${u}`;
-            };
-            searchResults.appendChild(li);
-          });
+    fetch('/messages.json')
+      .then(res => res.json())
+      .then(data => {
+        const chats = Object.keys(data);
+        const list = chats.filter(k => k.includes(currentUser));
+        const others = list.map(k => k.replace(currentUser, '').replace('__', ''));
+        renderList(others);
       });
 
-      loadChatList(users);
-    }
+    document.getElementById('search').addEventListener('input', function() {
+      const term = this.value.toLowerCase();
+      fetch('/users.json')
+        .then(res => res.json())
+        .then(users => {
+          const filtered = Object.keys(users)
+            .filter(u => u !== currentUser && u.includes(term));
+          renderList(filtered);
+        });
+    });
 
-    async function loadChatList(users) {
-      const res = await fetch("/api/messages");
-      const messages = await res.json();
-      const userMap = {};
-
-      messages.forEach(msg => {
-        const other = msg.from === username ? msg.to : msg.from;
-        if (!userMap[other] || new Date(msg.timestamp) > new Date(userMap[other].timestamp)) {
-          userMap[other] = msg;
-        }
-      });
-
-      Object.keys(userMap).forEach(user => {
-        const li = document.createElement("li");
-        li.textContent = `${user}: ${userMap[user].text}`;
+    function renderList(users) {
+      const ul = document.getElementById('results');
+      ul.innerHTML = '';
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user;
+        li.style.cursor = 'pointer';
         li.onclick = () => {
-          window.location.href = `chat.html?with=${user}`;
+          localStorage.setItem('chatWith', user);
+          location.href = 'chat.html';
         };
-        chatList.appendChild(li);
+        ul.appendChild(li);
       });
     }
-
-    loadUsers();
   </script>
 </body>
 </html>
