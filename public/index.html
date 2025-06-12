@@ -1,50 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Daftar Chat</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatApp - Beranda</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h2>Selamat datang, <span id="me"></span></h2>
-    <input type="text" id="search" placeholder="Cari username...">
-    <ul id="userList"></ul>
+    <h2>Selamat datang, <span id="currentUser"></span></h2>
+    
+    <input type="text" id="searchInput" placeholder="Cari username..." autocomplete="off" />
+    <ul id="searchResults"></ul>
+
+    <h3>Chat Terakhir</h3>
+    <ul id="chatList"></ul>
+
     <button onclick="logout()">Logout</button>
   </div>
-<script>
-if (!localStorage.getItem('user')) location.href = 'login.html';
 
-const me = localStorage.getItem('user');
-document.getElementById('me').innerText = me;
+  <script>
+    const currentUser = localStorage.getItem("username");
+    if (!currentUser) {
+      window.location.href = "login.html";
+    } else {
+      document.getElementById("currentUser").textContent = currentUser;
+    }
 
-function fetchUsers() {
-  fetch('/users')
-    .then(res => res.json())
-    .then(users => {
-      const list = document.getElementById('userList');
-      list.innerHTML = '';
-      const term = document.getElementById('search').value.toLowerCase();
-      users.filter(u => u.username !== me && u.username.includes(term))
-        .forEach(u => {
-          const li = document.createElement('li');
-          li.textContent = `${u.username} (${u.online ? 'Online' : 'Offline'})`;
-          li.onclick = () => {
-            localStorage.setItem('peer', u.username);
-            window.location.href = 'chat.html';
-          };
-          list.appendChild(li);
-        });
+    async function fetchUsers() {
+      const res = await fetch("/users");
+      return res.ok ? res.json() : [];
+    }
+
+    async function fetchChatList() {
+      const res = await fetch(`/chatlist/${currentUser}`);
+      return res.ok ? res.json() : [];
+    }
+
+    // Tampilkan hasil pencarian
+    document.getElementById("searchInput").addEventListener("input", async (e) => {
+      const keyword = e.target.value.trim().toLowerCase();
+      const users = await fetchUsers();
+      const results = users.filter(u => u !== currentUser && u.toLowerCase().includes(keyword));
+      const searchResults = document.getElementById("searchResults");
+      searchResults.innerHTML = "";
+      results.forEach(username => {
+        const li = document.createElement("li");
+        li.textContent = username;
+        li.onclick = () => {
+          window.location.href = `chat.html?user=${username}`;
+        };
+        searchResults.appendChild(li);
+      });
     });
-}
 
-document.getElementById('search').addEventListener('input', fetchUsers);
-fetchUsers();
-setInterval(fetchUsers, 5000);
+    // Tampilkan daftar chat
+    async function renderChatList() {
+      const list = await fetchChatList();
+      const chatList = document.getElementById("chatList");
+      chatList.innerHTML = "";
+      list.forEach(chat => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${chat.username}</strong><br><small>${chat.lastMessage}</small>`;
+        li.onclick = () => {
+          window.location.href = `chat.html?user=${chat.username}`;
+        };
+        chatList.appendChild(li);
+      });
+    }
 
-function logout() {
-  localStorage.removeItem('user');
-  window.location.href = 'login.html';
-}
-</script>
+    function logout() {
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
+
+    renderChatList();
+  </script>
 </body>
 </html>
